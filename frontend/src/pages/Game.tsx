@@ -66,7 +66,6 @@ export default function Game() {
         loadPlayer();
     }, [track]);
 
-    // nowy efekt: uruchamia skaner dopiero po wyrenderowaniu #qr-reader
     useEffect(() => {
         if (!scannerReady) return;
 
@@ -93,7 +92,7 @@ export default function Game() {
 
     const startScan = () => {
         setScanning(true);
-        setTimeout(() => setScannerReady(true), 100); // daj Reactowi czas na render
+        setTimeout(() => setScannerReady(true), 100);
     };
 
     return (
