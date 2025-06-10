@@ -13,6 +13,8 @@ export default function Game() {
     const [track, setTrack] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
     const [scannerReady, setScannerReady] = useState(false);
+    const [accessToken, setAccessToken] = useState<string | null>(null);
+    const [deviceId, setDeviceId] = useState<string | null>(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -23,18 +25,17 @@ export default function Game() {
     }, []);
 
     useEffect(() => {
-        if (!track) return;
-
         const refresh = localStorage.getItem("refresh_token");
         if (!refresh) {
             window.location.href = "/login";
             return;
         }
 
-        const loadPlayer = async () => {
+        const setup = async () => {
             const res = await fetch(`https://jurson-server.onrender.com/refresh?refresh_token=${refresh}`);
             const data = await res.json();
             const token = data.access_token;
+            setAccessToken(token);
 
             const script = document.createElement("script");
             script.src = "https://sdk.scdn.co/spotify-player.js";
@@ -43,28 +44,21 @@ export default function Game() {
 
             window.onSpotifyWebPlaybackSDKReady = () => {
                 const player = new window.Spotify.Player({
-                    name: "HisterPlayer",
+                    name: "JursonPlayer",
                     getOAuthToken: (cb: (token: string) => void) => cb(token),
                     volume: 0.5,
                 });
 
-                player.connect();
-
                 player.addListener("ready", ({ device_id }: { device_id: string }) => {
-                    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${device_id}`, {
-                        method: "PUT",
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ uris: [track] }),
-                    });
+                    setDeviceId(device_id);
                 });
+
+                player.connect();
             };
         };
 
-        loadPlayer();
-    }, [track]);
+        setup();
+    }, []);
 
     useEffect(() => {
         if (!scannerReady) return;
@@ -95,19 +89,47 @@ export default function Game() {
         setTimeout(() => setScannerReady(true), 100);
     };
 
+    const handlePlay = async () => {
+        if (!accessToken || !track || !deviceId) return;
+
+        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ uris: [track] }),
+        });
+    };
+
+    const handlePause = async () => {
+        if (!accessToken || !deviceId) return;
+
+        await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+    };
+
     return (
         <div style={{ padding: "2rem", textAlign: "center" }}>
-            <h1>🎧 Hister: Muzyczna runda</h1>
-
-            {!track && !scanning && (
-                <button onClick={startScan} style={{ padding: "1rem 2rem", fontSize: "1.2rem" }}>
-                    📷 Zeskanuj kod QR
-                </button>
-            )}
+            <h1>🎧 DJ Bobson Zapałka</h1>
 
             {scanning && <div id="qr-reader" style={{ width: "100%" }}></div>}
 
-            {track && <p>🎵 Odtwarzanie w tle…</p>}
+            <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
+                <button onClick={handlePlay} style={{ padding: "1rem 2rem" }}>▶️ Play</button>
+                <button onClick={handlePause} style={{ padding: "1rem 2rem" }}>⏸️ Pause</button>
+                <button onClick={startScan} style={{ padding: "1rem 2rem" }}>🔄 Scan QR</button>
+            </div>
+
+            {track && (
+                <p style={{ marginTop: "1rem" }}>
+                    🎵 Wczytano utwór: <code>{track}</code>
+                </p>
+            )}
         </div>
     );
 }
