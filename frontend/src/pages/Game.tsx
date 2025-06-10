@@ -1,10 +1,11 @@
+/// <reference types="spotify-web-playback-sdk" />
 import { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
 declare global {
     interface Window {
         onSpotifyWebPlaybackSDKReady: () => void;
-        Spotify: any;
+        Spotify: typeof Spotify;
     }
 }
 
