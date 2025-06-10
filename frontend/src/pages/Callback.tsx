@@ -4,7 +4,7 @@ export default function Callback() {
     useEffect(() => {
         const code = new URLSearchParams(window.location.search).get("code")
 
-        fetch(`https://music-game-frontend.onrender.com/callback?code=${code}`)
+        fetch(`https://jurson.onrender.com/callback?code=${code}`)
             .then(res => res.json())
             .then(data => {
                 localStorage.setItem("access_token", data.access_token)
