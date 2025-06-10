@@ -6,7 +6,6 @@ export default function Game() {
     const [scanning, setScanning] = useState(false);
     const [scannerReady, setScannerReady] = useState(false);
     const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [playbackState, setPlaybackState] = useState<"none" | "playing" | "paused">("none");
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -42,7 +41,6 @@ export default function Game() {
                     if (scannedTrack) {
                         setTrack(scannedTrack);
                         setScanning(false);
-                        setPlaybackState("none");
                         history.replaceState(null, "", `?track=${scannedTrack}`);
                     }
                 });
@@ -74,7 +72,6 @@ export default function Game() {
             }),
         });
 
-        setPlaybackState("playing");
     };
 
     const handlePause = async () => {
@@ -87,7 +84,6 @@ export default function Game() {
             },
         });
 
-        setPlaybackState("paused");
     };
 
     const handleResume = async () => {
@@ -100,7 +96,6 @@ export default function Game() {
             },
         });
 
-        setPlaybackState("playing");
     };
 
     const buttonStyle = {
