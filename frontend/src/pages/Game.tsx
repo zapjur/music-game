@@ -32,7 +32,7 @@ export default function Game() {
         }
 
         const loadPlayer = async () => {
-            const res = await fetch(`https://your-backend.onrender.com/refresh?refresh_token=${refresh}`);
+            const res = await fetch(`https://jurson-server.onrender.com/refresh?refresh_token=${refresh}`);
             const data = await res.json();
             const token = data.access_token;
 
