@@ -1,6 +1,6 @@
-/// <reference types="spotify-web-playback-sdk" />
 import { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
+/// <reference types="spotify-web-playback-sdk" />
 
 declare global {
     interface Window {
@@ -12,6 +12,7 @@ declare global {
 export default function Game() {
     const [track, setTrack] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
+    const [scannerReady, setScannerReady] = useState(false);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -65,8 +66,9 @@ export default function Game() {
         loadPlayer();
     }, [track]);
 
-    const startScan = () => {
-        setScanning(true);
+    // nowy efekt: uruchamia skaner dopiero po wyrenderowaniu #qr-reader
+    useEffect(() => {
+        if (!scannerReady) return;
 
         const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
         scanner.render(
@@ -83,6 +85,15 @@ export default function Game() {
             },
             () => {}
         );
+
+        return () => {
+            scanner.clear().catch(() => {});
+        };
+    }, [scannerReady]);
+
+    const startScan = () => {
+        setScanning(true);
+        setTimeout(() => setScannerReady(true), 100); // daj Reactowi czas na render
     };
 
     return (
