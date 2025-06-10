@@ -15,6 +15,7 @@ func main() {
 	http.HandleFunc("/callback", handlers.HandleCallback)
 	http.HandleFunc("/refresh", handlers.HandleRefresh)
 	http.HandleFunc("/play", handlers.HandlePlay)
+	http.HandleFunc("/devices", handlers.HandleDevices)
 
 	port := os.Getenv("PORT")
 	if port == "" {

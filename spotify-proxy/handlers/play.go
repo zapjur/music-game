@@ -28,7 +28,13 @@ func HandlePlay(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonData, _ := json.Marshal(requestBody)
 
-	req, _ := http.NewRequest("PUT", "https://api.spotify.com/v1/me/player/play", bytes.NewBuffer(jsonData))
+	url := "https://api.spotify.com/v1/me/player/play"
+	deviceID := r.URL.Query().Get("device_id")
+	if deviceID != "" {
+		url += "?device_id=" + deviceID
+	}
+
+	req, _ := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
 	req.Header.Set("Authorization", "Bearer "+body.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
 
