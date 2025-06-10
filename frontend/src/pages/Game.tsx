@@ -1,27 +1,17 @@
 import { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-/// <reference types="spotify-web-playback-sdk" />
-
-declare global {
-    interface Window {
-        onSpotifyWebPlaybackSDKReady: () => void;
-        Spotify: typeof Spotify;
-    }
-}
 
 export default function Game() {
     const [track, setTrack] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
     const [scannerReady, setScannerReady] = useState(false);
     const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [deviceId, setDeviceId] = useState<string | null>(null);
+    const [playbackState, setPlaybackState] = useState<"none" | "playing" | "paused">("none");
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const trackFromUrl = params.get("track");
-        if (trackFromUrl) {
-            setTrack(trackFromUrl);
-        }
+        if (trackFromUrl) setTrack(trackFromUrl);
     }, []);
 
     useEffect(() => {
@@ -34,27 +24,7 @@ export default function Game() {
         const setup = async () => {
             const res = await fetch(`https://jurson-server.onrender.com/refresh?refresh_token=${refresh}`);
             const data = await res.json();
-            const token = data.access_token;
-            setAccessToken(token);
-
-            const script = document.createElement("script");
-            script.src = "https://sdk.scdn.co/spotify-player.js";
-            script.async = true;
-            document.body.appendChild(script);
-
-            window.onSpotifyWebPlaybackSDKReady = () => {
-                const player = new window.Spotify.Player({
-                    name: "JursonPlayer",
-                    getOAuthToken: (cb: (token: string) => void) => cb(token),
-                    volume: 0.5,
-                });
-
-                player.addListener("ready", ({ device_id }: { device_id: string }) => {
-                    setDeviceId(device_id);
-                });
-
-                player.connect();
-            };
+            setAccessToken(data.access_token);
         };
 
         setup();
@@ -72,6 +42,7 @@ export default function Game() {
                     if (scannedTrack) {
                         setTrack(scannedTrack);
                         setScanning(false);
+                        setPlaybackState("none");
                         history.replaceState(null, "", `?track=${scannedTrack}`);
                     }
                 });
@@ -90,9 +61,9 @@ export default function Game() {
     };
 
     const handlePlay = async () => {
-        if (!accessToken || !track || !deviceId) return;
+        if (!accessToken || !track) return;
 
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        await fetch(`https://api.spotify.com/v1/me/player/play`, {
             method: "PUT",
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -100,17 +71,42 @@ export default function Game() {
             },
             body: JSON.stringify({ uris: [track] }),
         });
+
+        setPlaybackState("playing");
     };
 
     const handlePause = async () => {
-        if (!accessToken || !deviceId) return;
+        if (!accessToken) return;
 
-        await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+        await fetch(`https://api.spotify.com/v1/me/player/pause`, {
             method: "PUT",
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
+
+        setPlaybackState("paused");
+    };
+
+    const handleResume = async () => {
+        if (!accessToken) return;
+
+        await fetch(`https://api.spotify.com/v1/me/player/play`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        setPlaybackState("playing");
+    };
+
+    const buttonStyle = {
+        padding: "1rem 2rem",
+        fontSize: "1rem",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
     };
 
     return (
@@ -120,14 +116,44 @@ export default function Game() {
             {scanning && <div id="qr-reader" style={{ width: "100%" }}></div>}
 
             <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
-                <button onClick={handlePlay} style={{ padding: "1rem 2rem" }}>▶️ Play</button>
-                <button onClick={handlePause} style={{ padding: "1rem 2rem" }}>⏸️ Pause</button>
-                <button onClick={startScan} style={{ padding: "1rem 2rem" }}>🔄 Scan QR</button>
+                {playbackState === "none" && track && (
+                    <button
+                        onClick={handlePlay}
+                        style={{ ...buttonStyle, backgroundColor: "#22c55e", color: "white" }}
+                    >
+                        ▶️ Play
+                    </button>
+                )}
+
+                {playbackState === "playing" && (
+                    <button
+                        onClick={handlePause}
+                        style={{ ...buttonStyle, backgroundColor: "#f97316", color: "white" }}
+                    >
+                        ⏸️ Pause
+                    </button>
+                )}
+
+                {playbackState === "paused" && (
+                    <button
+                        onClick={handleResume}
+                        style={{ ...buttonStyle, backgroundColor: "#22c55e", color: "white" }}
+                    >
+                        ⏯️ Resume
+                    </button>
+                )}
+
+                <button
+                    onClick={startScan}
+                    style={{ ...buttonStyle, backgroundColor: "#3b82f6", color: "white" }}
+                >
+                    🔄 Scan QR
+                </button>
             </div>
 
             {track && (
                 <p style={{ marginTop: "1rem" }}>
-                    🎵 Wczytano utwór: <code>{track}</code>
+                    📡 Wczytano utwór. Gotowy do odtwarzania.
                 </p>
             )}
         </div>
