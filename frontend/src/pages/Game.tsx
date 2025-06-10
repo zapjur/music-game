@@ -6,6 +6,7 @@ export default function Game() {
     const [scanning, setScanning] = useState(false);
     const [scannerReady, setScannerReady] = useState(false);
     const [accessToken, setAccessToken] = useState<string | null>(null);
+    const [deviceId, setDeviceId] = useState<string | null>(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -28,6 +29,23 @@ export default function Game() {
 
         setup();
     }, []);
+
+    useEffect(() => {
+        if (!accessToken) return;
+
+        const fetchDevices = async () => {
+            const res = await fetch("https://jurson-server.onrender.com/devices", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ access_token: accessToken }),
+            });
+            const data = await res.json();
+            const active = data.devices.find((d: any) => d.is_active) || data.devices[0];
+            if (active) setDeviceId(active.id);
+        };
+
+        fetchDevices();
+    }, [accessToken]);
 
     useEffect(() => {
         if (!scannerReady) return;
@@ -59,9 +77,9 @@ export default function Game() {
     };
 
     const handlePlay = async () => {
-        if (!accessToken || !track) return;
+        if (!accessToken || !track || !deviceId) return;
 
-        await fetch(`https://jurson-server.onrender.com/play`, {
+        await fetch(`https://jurson-server.onrender.com/play?device_id=${deviceId}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -71,7 +89,6 @@ export default function Game() {
                 track_id: track.replace("spotify:track:", ""),
             }),
         });
-
     };
 
     const handlePause = async () => {
@@ -83,7 +100,6 @@ export default function Game() {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-
     };
 
     const handleResume = async () => {
@@ -95,7 +111,6 @@ export default function Game() {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-
     };
 
     const buttonStyle = {
