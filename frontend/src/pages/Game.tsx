@@ -63,13 +63,15 @@ export default function Game() {
     const handlePlay = async () => {
         if (!accessToken || !track) return;
 
-        await fetch(`https://api.spotify.com/v1/me/player/play`, {
+        await fetch(`https://jurson-server.onrender.com/play`, {
             method: "PUT",
             headers: {
-                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ uris: [track] }),
+            body: JSON.stringify({
+                access_token: accessToken,
+                track_id: track.replace("spotify:track:", ""),
+            }),
         });
 
         setPlaybackState("playing");
@@ -116,32 +118,26 @@ export default function Game() {
             {scanning && <div id="qr-reader" style={{ width: "100%" }}></div>}
 
             <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
-                {playbackState === "none" && track && (
-                    <button
-                        onClick={handlePlay}
-                        style={{ ...buttonStyle, backgroundColor: "#22c55e", color: "white" }}
-                    >
-                        ▶️ Play
-                    </button>
-                )}
+                <button
+                    onClick={handlePlay}
+                    style={{ ...buttonStyle, backgroundColor: "#22c55e", color: "white" }}
+                >
+                    ▶️ Play
+                </button>
 
-                {playbackState === "playing" && (
-                    <button
-                        onClick={handlePause}
-                        style={{ ...buttonStyle, backgroundColor: "#f97316", color: "white" }}
-                    >
-                        ⏸️ Pause
-                    </button>
-                )}
+                <button
+                    onClick={handlePause}
+                    style={{ ...buttonStyle, backgroundColor: "#f97316", color: "white" }}
+                >
+                    ⏸️ Pause
+                </button>
 
-                {playbackState === "paused" && (
-                    <button
-                        onClick={handleResume}
-                        style={{ ...buttonStyle, backgroundColor: "#22c55e", color: "white" }}
-                    >
-                        ⏯️ Resume
-                    </button>
-                )}
+                <button
+                    onClick={handleResume}
+                    style={{ ...buttonStyle, backgroundColor: "#4f46e5", color: "white" }}
+                >
+                    ⏯️ Resume
+                </button>
 
                 <button
                     onClick={startScan}
