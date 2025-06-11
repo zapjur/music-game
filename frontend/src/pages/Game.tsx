@@ -1,12 +1,11 @@
 import { useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Game() {
-    const [params] = useSearchParams();
     const navigate = useNavigate();
 
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
+    const accessToken = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
 
     useEffect(() => {
         if (!accessToken || !refreshToken) {
