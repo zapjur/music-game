@@ -44,44 +44,35 @@ export default function Game() {
         };
 
         createSession();
-    }, [accessToken]);
+    }, []);
 
-    return (
-        <div style={{
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "#121212",
-            color: "#fff",
-            textAlign: "center",
-            padding: "20px",
-        }}>
-            <h1 style={{ fontSize: "2.5rem", marginBottom: "32px" }}>Sterowanie cwelem</h1>
+    useEffect(() => {
+        if (!refreshToken) return;
 
-            <div style={{ display: "flex", gap: "16px", marginBottom: "40px" }}>
-                <button style={buttonStyle} onClick={() => handleAction("play")}>Play</button>
-                <button style={buttonStyle} onClick={() => handleAction("pause")}>Pause</button>
-                <button style={buttonStyle} onClick={() => handleAction("resume")}>Resume</button>
-            </div>
+        const interval = setInterval(() => {
+            const refreshAccessToken = async () => {
+                try {
+                    const res = await fetch(`https://jurson-server.onrender.com/refresh?refresh_token=${refreshToken}`);
+                    if (!res.ok) {
+                        console.warn("Nie udało się odświeżyć tokena.");
+                        return;
+                    }
+                    const data = await res.json();
+                    if (data.access_token) {
+                        localStorage.setItem("access_token", data.access_token);
+                        setAccessToken(data.access_token);
+                        console.log("🔄 Access token odświeżony automatycznie.");
+                    }
+                } catch (err) {
+                    console.error("Błąd przy automatycznym odświeżaniu tokena", err);
+                }
+            };
 
-            {sessionId && (
-                <div style={{ marginTop: "20px" }}>
-                    <h2 style={{ marginBottom: "16px" }}>📱 Zeskanuj QR kod telefonem</h2>
-                    <QRCode
-                        value={`https://jurson.onrender.com/pilot?session_id=${sessionId}`}
-                        size={256}
-                        bgColor="#121212"
-                        fgColor="#1DB954"
-                    />
-                    <p style={{ marginTop: "12px" }}>
-                        ID sesji: <strong>{sessionId}</strong>
-                    </p>
-                </div>
-            )}
-        </div>
-    );
+            refreshAccessToken();
+        }, 50 * 60 * 1000);
+
+        return () => clearInterval(interval);
+    }, [refreshToken]);
 
     async function refreshAccessToken(): Promise<string | null> {
         if (!refreshToken) return null;
@@ -141,6 +132,51 @@ export default function Game() {
             console.error("Request failed:", err);
         }
     }
+
+    const handleLogout = () => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        setAccessToken(null);
+        navigate("/login");
+    };
+
+    return (
+        <div style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#121212",
+            color: "#fff",
+            textAlign: "center",
+            padding: "20px",
+        }}>
+            <h1 style={{ fontSize: "2.5rem", marginBottom: "32px" }}>Sterowanie cwelem</h1>
+
+            <div style={{ display: "flex", gap: "16px", marginBottom: "40px", flexWrap: "wrap", justifyContent: "center" }}>
+                <button style={buttonStyle} onClick={() => handleAction("play")}>Play</button>
+                <button style={buttonStyle} onClick={() => handleAction("pause")}>Pause</button>
+                <button style={buttonStyle} onClick={() => handleAction("resume")}>Resume</button>
+                <button style={buttonStyle} onClick={handleLogout}>Tu są drzwi</button>
+            </div>
+
+            {sessionId && (
+                <div style={{ marginTop: "20px" }}>
+                    <h2 style={{ marginBottom: "16px" }}>📱 Zeskanuj QR kod telefonem</h2>
+                    <QRCode
+                        value={`https://jurson.onrender.com/pilot?session_id=${sessionId}`}
+                        size={256}
+                        bgColor="#121212"
+                        fgColor="#1DB954"
+                    />
+                    <p style={{ marginTop: "12px" }}>
+                        ID sesji: <strong>{sessionId}</strong>
+                    </p>
+                </div>
+            )}
+        </div>
+    );
 }
 
 const buttonStyle: React.CSSProperties = {
@@ -155,4 +191,3 @@ const buttonStyle: React.CSSProperties = {
     boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
     transition: "background-color 0.3s ease",
 };
-
