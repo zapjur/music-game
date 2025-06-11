@@ -8,6 +8,7 @@ export default function Pilot() {
 
     const [status, setStatus] = useState<string | null>(null);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const lastTrackIdRef = useRef<string | null>(null);
 
     const handleAction = async (action: "play" | "pause" | "resume", trackId?: string) => {
         if (!sessionId) {
@@ -45,17 +46,17 @@ export default function Pilot() {
         scanner.render(
             (decodedText) => {
                 console.log("Zeskanowano:", decodedText);
-                scanner.clear();
 
                 const trackId = decodedText.trim();
                 if (/^[a-zA-Z0-9]{22}$/.test(trackId)) {
+                    lastTrackIdRef.current = trackId;
                     handleAction("play", trackId);
                 } else {
                     setStatus("Nieprawidłowy track ID");
                 }
             },
             (error) => {
-                console.log("Zeskanowano błąd:", error);
+                console.log("Błąd skanowania:", error);
             }
         );
 
@@ -71,7 +72,15 @@ export default function Pilot() {
             <h1>📱 Pilot Spotify</h1>
             <p>Sesja: <strong>{sessionId || "brak"}</strong></p>
 
-            <button onClick={() => handleAction("play")}>▶️ Play</button>
+            <button onClick={() => {
+                if (lastTrackIdRef.current) {
+                    handleAction("play", lastTrackIdRef.current ?? undefined);
+                } else {
+                    setStatus("Nie zeskanowano jeszcze żadnego tracka");
+                }
+            }}>
+                ▶️ Play (ostatni)
+            </button>
             <button onClick={() => handleAction("pause")}>⏸️ Pause</button>
             <button onClick={() => handleAction("resume")}>⏵ Resume</button>
 
