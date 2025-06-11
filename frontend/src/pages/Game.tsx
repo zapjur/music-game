@@ -1,104 +1,119 @@
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Html5QrcodeScanner, Html5Qrcode } from "html5-qrcode";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
 
-export default function Pilot() {
-    const [searchParams] = useSearchParams();
-    const sessionId = searchParams.get("session_id");
+export default function Game() {
+    const navigate = useNavigate();
 
-    const [status, setStatus] = useState<string | null>(null);
-    const [scanning, setScanning] = useState(false);
-    const scannerRef = useRef<Html5Qrcode | null>(null);
-    const lastTrackIdRef = useRef<string | null>(null);
+    const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem("access_token"));
+    const refreshToken = localStorage.getItem("refresh_token");
+    const [sessionId, setSessionId] = useState<string | null>(null);
 
-    const handleAction = async (action: "play" | "pause" | "resume", trackId?: string) => {
-        if (!sessionId) {
-            setStatus("Brak session_id w URL");
+    useEffect(() => {
+        if (!accessToken || !refreshToken) {
+            navigate("/login");
             return;
         }
 
-        try {
-            const res = await fetch("https://jurson-server.onrender.com/session-command", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    action,
-                    ...(action === "play" && trackId ? { track_id: trackId } : {}),
-                }),
-            });
+        const createSession = async () => {
+            try {
+                const res = await fetch("https://jurson-server.onrender.com/create-session", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ access_token: accessToken }),
+                });
 
-            const text = await res.text();
-            setStatus(`${action.toUpperCase()}: ${res.status} - ${text}`);
-        } catch (err) {
-            console.error(err);
-            setStatus("Wystąpił błąd przy wysyłaniu komendy.");
-        }
-    };
-
-    const startScan = async () => {
-        setStatus(null);
-        setScanning(true);
-        const qrRegionId = "qr-reader";
-
-        const scanner = new Html5Qrcode(qrRegionId);
-        scannerRef.current = scanner;
-
-        try {
-            await scanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                (decodedText) => {
-                    console.log("Zeskanowano:", decodedText);
-                    scanner.stop().then(() => {
-                        document.getElementById(qrRegionId)?.innerHTML = "";
-                        setScanning(false);
-                    });
-
-                    const trackId = decodedText.trim();
-                    if (/^[a-zA-Z0-9]{22}$/.test(trackId)) {
-                        lastTrackIdRef.current = trackId;
-                        handleAction("play", trackId);
-                    } else {
-                        setStatus("Nieprawidłowy track ID");
-                    }
-                },
-                (errorMessage) => {
-                    console.log("Skanowanie:", errorMessage);
+                if (!res.ok) {
+                    console.error("Nie udało się utworzyć sesji");
+                    return;
                 }
-            );
-        } catch (err) {
-            console.error("Błąd uruchamiania skanera:", err);
-            setStatus("Nie udało się uruchomić skanera.");
-            setScanning(false);
-        }
-    };
+
+                const data = await res.json();
+                setSessionId(data.session_id);
+            } catch (err) {
+                console.error("Błąd przy tworzeniu sesji", err);
+            }
+        };
+
+        createSession();
+    }, [accessToken]);
 
     return (
         <div style={{ textAlign: "center", marginTop: 50 }}>
-            <h1>📱 Pilot Spotify</h1>
-            <p>Sesja: <strong>{sessionId || "brak"}</strong></p>
+            <h1>🎵 Sterowanie Spotify</h1>
 
-            <button onClick={() => handleAction("play", lastTrackIdRef.current ?? undefined)}>
-                ▶️ Play (ostatni)
-            </button>
+            <button onClick={() => handleAction("play")}>▶️ Play</button>
             <button onClick={() => handleAction("pause")}>⏸️ Pause</button>
             <button onClick={() => handleAction("resume")}>⏵ Resume</button>
 
-            <div style={{ marginTop: 30 }}>
-                {!scanning && (
-                    <button onClick={startScan}>📷 Zeskanuj kod utworu</button>
-                )}
-                <div id="qr-reader" style={{ width: 300, margin: "20px auto" }} />
-            </div>
-
-            {status && (
-                <div style={{ marginTop: 20 }}>
-                    <strong>Status:</strong> {status}
+            {sessionId && (
+                <div style={{ marginTop: 40 }}>
+                    <h2>📱 Zeskanuj QR kod telefonem</h2>
+                    <QRCode value={`https://jurson.onrender.com/pilot?session_id=${sessionId}`} size={256} />
+                    <p>ID sesji: <strong>{sessionId}</strong></p>
                 </div>
             )}
         </div>
     );
+
+    async function refreshAccessToken(): Promise<string | null> {
+        if (!refreshToken) return null;
+
+        try {
+            const res = await fetch(`https://jurson-server.onrender.com/refresh?refresh_token=${refreshToken}`);
+            if (!res.ok) return null;
+
+            const data = await res.json();
+            if (data.access_token) {
+                localStorage.setItem("access_token", data.access_token);
+                setAccessToken(data.access_token);
+                return data.access_token;
+            }
+
+            return null;
+        } catch (err) {
+            console.error("Error refreshing token", err);
+            return null;
+        }
+    }
+
+    async function handleAction(action: "play" | "pause" | "resume") {
+        try {
+            let token = accessToken;
+
+            const performRequest = async (tokenToUse: string) => {
+                return fetch(`https://jurson-server.onrender.com/${action}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        access_token: tokenToUse,
+                        ...(action === "play" ? { track_id: "7G4wYMAA1C4sgjfUqDiPLf" } : {}),
+                    }),
+                });
+            };
+
+            let res = await performRequest(token!);
+
+            if (res.status === 401) {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    token = newToken;
+                    res = await performRequest(newToken);
+                } else {
+                    console.warn("Brak możliwości odświeżenia tokena. Przekierowuję na login.");
+                    navigate("/login");
+                    return;
+                }
+            }
+
+            const text = await res.text();
+            console.log(`${action.toUpperCase()} ➜`, text);
+        } catch (err) {
+            console.error("Request failed:", err);
+        }
+    }
 }
