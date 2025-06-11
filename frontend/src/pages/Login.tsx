@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 export default function Login() {
     const clientId = "25eea8a6e3bc40b4b0690602a17108a0";
