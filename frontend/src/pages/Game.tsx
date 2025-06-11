@@ -10,6 +10,12 @@ export default function Game() {
     const [sessionId, setSessionId] = useState<string | null>(null);
 
     useEffect(() => {
+        document.body.style.margin = "0";
+        document.body.style.padding = "0";
+        document.body.style.backgroundColor = "#121212";
+        document.body.style.color = "#fff";
+        document.body.style.fontFamily = "'Inter', sans-serif";
+
         if (!accessToken || !refreshToken) {
             navigate("/login");
             return;
@@ -41,18 +47,37 @@ export default function Game() {
     }, [accessToken]);
 
     return (
-        <div style={{ textAlign: "center", marginTop: 50 }}>
-            <h1>🎵 Sterowanie Spotify</h1>
+        <div style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#121212",
+            color: "#fff",
+            textAlign: "center",
+            padding: "20px",
+        }}>
+            <h1 style={{ fontSize: "2.5rem", marginBottom: "32px" }}>Sterowanie cwelem</h1>
 
-            <button onClick={() => handleAction("play")}>▶️ Play</button>
-            <button onClick={() => handleAction("pause")}>⏸️ Pause</button>
-            <button onClick={() => handleAction("resume")}>⏵ Resume</button>
+            <div style={{ display: "flex", gap: "16px", marginBottom: "40px" }}>
+                <button style={buttonStyle} onClick={() => handleAction("play")}>Play</button>
+                <button style={buttonStyle} onClick={() => handleAction("pause")}>Pause</button>
+                <button style={buttonStyle} onClick={() => handleAction("resume")}>Resume</button>
+            </div>
 
             {sessionId && (
-                <div style={{ marginTop: 40 }}>
-                    <h2>📱 Zeskanuj QR kod telefonem</h2>
-                    <QRCode value={`https://jurson.onrender.com/pilot?session_id=${sessionId}`} size={256} />
-                    <p>ID sesji: <strong>{sessionId}</strong></p>
+                <div style={{ marginTop: "20px" }}>
+                    <h2 style={{ marginBottom: "16px" }}>📱 Zeskanuj QR kod telefonem</h2>
+                    <QRCode
+                        value={`https://jurson.onrender.com/pilot?session_id=${sessionId}`}
+                        size={256}
+                        bgColor="#121212"
+                        fgColor="#1DB954"
+                    />
+                    <p style={{ marginTop: "12px" }}>
+                        ID sesji: <strong>{sessionId}</strong>
+                    </p>
                 </div>
             )}
         </div>
@@ -117,3 +142,17 @@ export default function Game() {
         }
     }
 }
+
+const buttonStyle: React.CSSProperties = {
+    backgroundColor: "#1DB954",
+    color: "#121212",
+    border: "none",
+    borderRadius: "9999px",
+    padding: "12px 24px",
+    fontSize: "16px",
+    fontWeight: 600,
+    cursor: "pointer",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
+    transition: "background-color 0.3s ease",
+};
+

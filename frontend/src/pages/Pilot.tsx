@@ -70,6 +70,12 @@ export default function Pilot() {
     };
 
     useEffect(() => {
+        document.body.style.margin = "0";
+        document.body.style.padding = "0";
+        document.body.style.backgroundColor = "#121212";
+        document.body.style.color = "#fff";
+        document.body.style.fontFamily = "'Inter', sans-serif";
+
         if (scannerActive) {
             startScanner();
         }
@@ -80,35 +86,62 @@ export default function Pilot() {
     }, [scannerActive]);
 
     return (
-        <div style={{ textAlign: "center", marginTop: 50 }}>
-            <h1>📱 Pilot Spotify</h1>
+        <div style={{
+            minHeight: "100vh",
+            padding: "20px",
+            backgroundColor: "#121212",
+            color: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center"
+        }}>
+            <h1 style={{ fontSize: "2rem", marginBottom: "16px" }}>📱 Zdalny cwel</h1>
             <p>Sesja: <strong>{sessionId || "brak"}</strong></p>
 
-            <button onClick={() => {
-                if (lastTrackIdRef.current) {
-                    handleAction("play", lastTrackIdRef.current ?? undefined);
-                } else {
-                    setStatus("Nie zeskanowano jeszcze żadnego tracka");
-                }
-            }}>
-                ▶️ Play (ostatni)
-            </button>
-            <button onClick={() => handleAction("pause")}>⏸️ Pause</button>
-            <button onClick={() => handleAction("resume")}>⏵ Resume</button>
+            <div style={{ display: "flex", gap: "16px", marginTop: "24px", flexWrap: "wrap", justifyContent: "center" }}>
+                <button style={buttonStyle} onClick={() => {
+                    if (lastTrackIdRef.current) {
+                        handleAction("play", lastTrackIdRef.current ?? undefined);
+                    } else {
+                        setStatus("Nie zeskanowano jeszcze żadnego tracka");
+                    }
+                }}>
+                    Play (ostatni)
+                </button>
+                <button style={buttonStyle} onClick={() => handleAction("pause")}>Pause</button>
+                <button style={buttonStyle} onClick={() => handleAction("resume")}>Resume</button>
+            </div>
 
-            {scannerActive && <div id="qr-reader" style={{ width: 300, margin: "40px auto" }} />}
+            {scannerActive && (
+                <div id="qr-reader" style={{ width: 300, marginTop: "40px" }} />
+            )}
 
             {!scannerActive && (
-                <button style={{ marginTop: 20 }} onClick={() => setScannerActive(true)}>
-                    🔄 Zeskanuj ponownie
+                <button style={{ ...buttonStyle, marginTop: "24px" }} onClick={() => setScannerActive(true)}>
+                    Zeskanuj ponownie
                 </button>
             )}
 
             {status && (
-                <div style={{ marginTop: 20 }}>
+                <div style={{ marginTop: "24px", maxWidth: "90%", wordBreak: "break-word" }}>
                     <strong>Status:</strong> {status}
                 </div>
             )}
         </div>
     );
 }
+
+const buttonStyle: React.CSSProperties = {
+    backgroundColor: "#1DB954",
+    color: "#121212",
+    border: "none",
+    borderRadius: "9999px",
+    padding: "12px 24px",
+    fontSize: "16px",
+    fontWeight: 600,
+    cursor: "pointer",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.3)",
+    transition: "background-color 0.3s ease",
+};
