@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import QRCode from "qrcode.react";
+import { QRCode } from "qrcode.react";
 
 export default function Game() {
     const navigate = useNavigate();
