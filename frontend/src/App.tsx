@@ -12,7 +12,7 @@ export default function App() {
             <Route path="/" element={<Game />} />
             <Route path="/callback" element={<Callback />} />
             <Route path="/pilot" element={<Pilot />} />
-            <Route path="*" element={<Pilot /> } />
+            <Route path="*" element={<div>404 – Nie znaleziono</div>} />
         </Routes>
     )
 }
