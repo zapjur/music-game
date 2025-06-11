@@ -2,12 +2,13 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.cjs"
+    "start": "serve -c serve.json"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.5",
