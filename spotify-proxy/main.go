@@ -18,6 +18,8 @@ func main() {
 	http.HandleFunc("/devices", handlers.HandleDevices)
 	http.HandleFunc("/resume", handlers.HandleResume)
 	http.HandleFunc("/pause", handlers.HandlePause)
+	http.HandleFunc("/create-session", handlers.HandleCreateSession)
+	http.HandleFunc("/session-command", handlers.HandleSessionCommand)
 
 	port := os.Getenv("PORT")
 	if port == "" {
