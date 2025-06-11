@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "npx serve -s dist"
+    "start": "node server.js"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.5",
