@@ -7,6 +7,7 @@ export default function Pilot() {
     const sessionId = searchParams.get("session_id");
 
     const [status, setStatus] = useState<string | null>(null);
+    const [scannerActive, setScannerActive] = useState(true);
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
     const lastTrackIdRef = useRef<string | null>(null);
 
@@ -37,15 +38,20 @@ export default function Pilot() {
         }
     };
 
-    useEffect(() => {
+    const startScanner = () => {
+        if (scannerRef.current) return;
+
         const scanner = new Html5QrcodeScanner("qr-reader", {
             fps: 10,
             qrbox: 250,
         }, false);
 
         scanner.render(
-            (decodedText) => {
+            async (decodedText) => {
                 console.log("Zeskanowano:", decodedText);
+                await scanner.clear();
+                scannerRef.current = null;
+                setScannerActive(false);
 
                 const trackId = decodedText.trim();
                 if (/^[a-zA-Z0-9]{22}$/.test(trackId)) {
@@ -61,11 +67,17 @@ export default function Pilot() {
         );
 
         scannerRef.current = scanner;
+    };
+
+    useEffect(() => {
+        if (scannerActive) {
+            startScanner();
+        }
 
         return () => {
-            scanner.clear().catch((err) => console.error("Błąd przy czyszczeniu skanera:", err));
+            scannerRef.current?.clear().catch((err) => console.error("Błąd przy czyszczeniu skanera:", err));
         };
-    }, []);
+    }, [scannerActive]);
 
     return (
         <div style={{ textAlign: "center", marginTop: 50 }}>
@@ -84,7 +96,13 @@ export default function Pilot() {
             <button onClick={() => handleAction("pause")}>⏸️ Pause</button>
             <button onClick={() => handleAction("resume")}>⏵ Resume</button>
 
-            <div id="qr-reader" style={{ width: 300, margin: "40px auto" }} />
+            {scannerActive && <div id="qr-reader" style={{ width: 300, margin: "40px auto" }} />}
+
+            {!scannerActive && (
+                <button style={{ marginTop: 20 }} onClick={() => setScannerActive(true)}>
+                    🔄 Zeskanuj ponownie
+                </button>
+            )}
 
             {status && (
                 <div style={{ marginTop: 20 }}>
