@@ -51,11 +51,11 @@ export default function Game() {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${tokenToUse}`, // poprawka
                     },
-                    body: JSON.stringify(
-                        action === "play" ? { track_id: "7G4wYMAA1C4sgjfUqDiPLf" } : {}
-                    ),
+                    body: JSON.stringify({
+                        access_token: tokenToUse,
+                        ...(action === "play" ? { track_id: "7G4wYMAA1C4sgjfUqDiPLf" } : {}),
+                    }),
                 });
             };
 
