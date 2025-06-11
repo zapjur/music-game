@@ -1,79 +1,51 @@
-import React, { useEffect, useState } from "react";
-import {
-    View,
-    Text,
-    Button,
-    StyleSheet,
-    Alert,
-} from "react-native";
-import { useSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 
-const BACKEND_URL = "https://jurson-server.onrender.com";
-
-export default function GameScreen() {
-    const params = useSearchParams();
-    const [accessToken, setAccessToken] = useState(params.access_token || "");
-    const [trackId, setTrackId] = useState(params.track_id || "7G4wYMAA1C4sgjfUqDiPLf");
+export default function Game() {
+    const [accessToken, setAccessToken] = useState("");
+    const [trackId, setTrackId] = useState("7G4wYMAA1C4sgjfUqDiPLf");
 
     useEffect(() => {
-        if (!accessToken) {
-            Alert.alert("Brak tokenu", "Access token jest wymagany");
-        }
-    }, [accessToken]);
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("access_token");
+        const track = params.get("track_id");
+
+        if (token) setAccessToken(token);
+        if (track) setTrackId(track);
+    }, []);
 
     const callAction = async (action: "play" | "pause" | "resume") => {
         try {
-            const response = await fetch(`${BACKEND_URL}/${action}`, {
+            const res = await fetch(`https://jurson-server.onrender.com/${action}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${accessToken}`,
                 },
-                body: JSON.stringify(
-                    action === "play" ? { track_id: trackId } : {}
-                ),
+                body: JSON.stringify({
+                    ...(action === "play" ? { track_id: trackId } : {}),
+                }),
             });
 
-            const text = await response.text();
+            const text = await res.text();
             console.log(`${action.toUpperCase()} ➜`, text);
-
-            if (!response.ok) {
-                throw new Error(text);
-            }
+            if (!res.ok) throw new Error(text);
         } catch (err: any) {
-            Alert.alert("Błąd", err.message || "Nie udało się wykonać akcji.");
+            alert(`Błąd: ${err.message}`);
         }
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Sterowanie Spotify</Text>
-            <View style={styles.button}>
-                <Button title="▶️ Play" color="#4CAF50" onPress={() => callAction("play")} />
-            </View>
-            <View style={styles.button}>
-                <Button title="⏸️ Pause" color="#F44336" onPress={() => callAction("pause")} />
-            </View>
-            <View style={styles.button}>
-                <Button title="⏵ Resume" color="#2196F3" onPress={() => callAction("resume")} />
-            </View>
-        </View>
+        <div style={{ textAlign: "center", marginTop: 50 }}>
+            <h2>Sterowanie Spotify</h2>
+            <button style={{ background: "#4CAF50", margin: 10 }} onClick={() => callAction("play")}>
+                ▶️ Play
+            </button>
+            <button style={{ background: "#F44336", margin: 10 }} onClick={() => callAction("pause")}>
+                ⏸️ Pause
+            </button>
+            <button style={{ background: "#2196F3", margin: 10 }} onClick={() => callAction("resume")}>
+                ⏵ Resume
+            </button>
+        </div>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#fff",
-    },
-    title: {
-        fontSize: 24,
-        marginBottom: 20,
-    },
-    button: {
-        marginVertical: 10,
-        width: 200,
-    },
-});
